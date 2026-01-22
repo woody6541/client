@@ -1,0 +1,348 @@
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+
+const COURSE_API = "http://localhost:3000/api/courses";
+const GALLERY_API = "http://localhost:3000/api/gallery";
+const LEADS_API = "http://localhost:3000/api/leads";
+
+export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  // Protect route
+  useEffect(() => {
+    if (!token || user?.role !== "admin") {
+      navigate("/login");
+    }
+  }, [token, user, navigate]);
+
+  // ===== COURSES =====
+  const [courses, setCourses] = useState([]);
+  const [editingCourseId, setEditingCourseId] = useState(null);
+  const [courseForm, setCourseForm] = useState({
+    category: "",
+    type: "",
+    title: "",
+    description: "",
+    duration: "",
+    video: "",
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // ===== GALLERY =====
+  const [gallery, setGallery] = useState([]);
+  const [galleryForm, setGalleryForm] = useState({ category: "", image: null });
+  const [preview, setPreview] = useState(null);
+
+  // ===== LEADS =====
+  const [leads, setLeads] = useState([]);
+  const [leadSearch, setLeadSearch] = useState("");
+
+  const authHeader = { Authorization: `Bearer ${token}` };
+
+  // ===== FETCH FUNCTIONS =====
+  const fetchCourses = async () => {
+    const res = await fetch(COURSE_API, { headers: authHeader });
+    setCourses(await res.json());
+  };
+
+  const fetchGallery = async () => {
+    const res = await fetch(GALLERY_API, { headers: authHeader });
+    setGallery(await res.json());
+  };
+
+  const fetchLeads = async () => {
+    const res = await fetch(LEADS_API, { headers: authHeader });
+    setLeads(await res.json());
+  };
+
+  useEffect(() => {
+    fetchCourses();
+    fetchGallery();
+    fetchLeads();
+  }, []);
+
+  // ===== COURSE HANDLERS =====
+  const handleCourseSubmit = async (e) => {
+    e.preventDefault();
+    const method = editingCourseId ? "PUT" : "POST";
+    const url = editingCourseId ? `${COURSE_API}/${editingCourseId}` : COURSE_API;
+
+    await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json", ...authHeader },
+      body: JSON.stringify(courseForm),
+    });
+
+    setCourseForm({ category: "", type: "", title: "", description: "", duration: "", video: "" });
+    setEditingCourseId(null);
+    fetchCourses();
+  };
+
+  const handleEditCourse = (course) => {
+    setEditingCourseId(course._id);
+    setCourseForm({ ...course });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDeleteCourse = async (id) => {
+    if (!window.confirm("Delete this course?")) return;
+    await fetch(`${COURSE_API}/${id}`, { method: "DELETE", headers: authHeader });
+    fetchCourses();
+  };
+
+  // ===== GALLERY HANDLERS =====
+
+const handleGallerySubmit = async (e) => {
+  e.preventDefault();
+  if (!galleryForm.image) return alert("Select an image");
+
+  const formData = new FormData();
+  formData.append("category", galleryForm.category);
+  formData.append("image", galleryForm.image);
+
+  try {
+    const res = await fetch(GALLERY_API, { 
+      method: "POST", 
+      headers: authHeader, 
+      body: formData 
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || "Upload failed");
+    }
+
+    
+    setGalleryForm({ category: "", image: null });
+    setPreview(null);
+    fetchGallery();
+    alert("Image uploaded successfully!");
+
+  } catch (err) {
+    console.error(err);
+    alert(`Error: ${err.message}`);
+  }
+};
+
+  const deleteGallery = async (id) => {
+    if (!window.confirm("Delete image?")) return;
+    await fetch(`${GALLERY_API}/${id}`, { method: "DELETE", headers: authHeader });
+    fetchGallery();
+  };
+
+  // ===== LEADS HANDLER =====
+  const deleteLead = async (id) => {
+    if (!window.confirm("Delete this lead?")) return;
+    await fetch(`${LEADS_API}/${id}`, { method: "DELETE", headers: authHeader });
+    fetchLeads();
+  };
+
+  const inputStyle =
+    "border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition";
+
+  const filteredCourses = courses.filter((course) =>
+    course.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredLeads = leads.filter((lead) => {
+    const query = leadSearch.toLowerCase();
+    return (
+      lead.name.toLowerCase().includes(query) ||
+      (lead.email && lead.email.toLowerCase().includes(query)) ||
+      lead.phone.toLowerCase().includes(query) ||
+      (lead.course && lead.course.toLowerCase().includes(query))
+    );
+  });
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen bg-gradient-to-br from-gray-100 via-blue-50 to-gray-100 p-6 space-y-12"
+    >
+      <motion.h1
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="text-3xl font-extrabold text-blue-900"
+      >
+        Admin Dashboard
+      </motion.h1>
+
+      {/* ================= COURSE ================= */}
+      <motion.div className="bg-white/90 p-8 rounded-2xl shadow-xl">
+        <h2 className="text-xl font-bold mb-6 text-[#003b73]">📘 Course Management</h2>
+
+        <input
+          type="text"
+          placeholder="🔍 Search course by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="mb-6 w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+
+        <form onSubmit={handleCourseSubmit} className="grid md:grid-cols-2 gap-4">
+          <select
+            value={courseForm.category}
+            onChange={(e) => setCourseForm({ ...courseForm, category: e.target.value })}
+            className={inputStyle}
+            required
+          >
+            <option value="">Select Department</option>
+            <option value="software">Software</option>
+            <option value="cad">CAD</option>
+            <option value="accounting">Accounting</option>
+            <option value="multimedia">Multimedia</option>
+            <option value="digital-marketing">Digital Marketing</option>
+          </select>
+
+          <select
+            value={courseForm.type}
+            onChange={(e) => setCourseForm({ ...courseForm, type: e.target.value })}
+            className={inputStyle}
+            required
+          >
+            <option value="">Course Type</option>
+            <option value="diploma">Diploma</option>
+            <option value="certificate">Certificate</option>
+            <option value="advanced">Advanced Diploma</option>
+            <option value="master">Master</option>
+          </select>
+
+          <input
+            placeholder="Course Title"
+            value={courseForm.title}
+            onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
+            className={inputStyle}
+          />
+
+          <input
+            placeholder="Duration"
+            value={courseForm.duration}
+            onChange={(e) => setCourseForm({ ...courseForm, duration: e.target.value })}
+            className={inputStyle}
+          />
+
+          <textarea
+            placeholder="Description"
+            value={courseForm.description}
+            onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
+            className={`${inputStyle} md:col-span-2`}
+          />
+
+          <button className="bg-blue-700 text-white py-3 rounded-xl md:col-span-2">
+            {editingCourseId ? "Update Course" : "Save Course"}
+          </button>
+        </form>
+
+        <div className="mt-10 grid md:grid-cols-2 gap-4">
+          {filteredCourses.map((course) => (
+            <div key={course._id} className="border rounded-xl p-4 shadow-sm bg-white">
+              <h4 className="font-bold text-blue-900">{course.title}</h4>
+              <p className="text-sm text-gray-600 capitalize">
+                {course.category} • {course.type}
+              </p>
+              <p className="text-sm mt-1">{course.duration}</p>
+
+              <div className="flex gap-3 mt-4">
+                <button onClick={() => handleEditCourse(course)} className="px-4 py-2 bg-yellow-500 text-white rounded">
+                  Edit
+                </button>
+                <button onClick={() => handleDeleteCourse(course._id)} className="px-4 py-2 bg-red-600 text-white rounded">
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* ================= GALLERY ================= */}
+      <motion.div className="bg-white/90 p-8 rounded-2xl shadow-xl">
+        <h2 className="text-xl font-bold mb-6 text-[#003b73]">🖼️ Gallery Management</h2>
+
+        <form onSubmit={handleGallerySubmit} className="grid md:grid-cols-2 gap-4 mb-6">
+          <select
+            value={galleryForm.category}
+            onChange={(e) => setGalleryForm({ ...galleryForm, category: e.target.value })}
+            className={inputStyle}
+            required
+          >
+            <option value="">Select Category</option>
+            <option value="Awards">Awards</option>
+            <option value="Offers">Offers</option>
+            <option value="Celebrations">Celebrations</option>
+            <option value="Programmes">Programmes</option>
+          </select>
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              setGalleryForm({ ...galleryForm, image: file });
+              setPreview(URL.createObjectURL(file));
+            }}
+          />
+
+          {preview && <img src={preview} className="h-40 rounded-xl md:col-span-2" />}
+
+          <button className="bg-green-600 text-white py-3 rounded-xl md:col-span-2">Upload Image</button>
+        </form>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          {gallery.map((item) => (
+  <div key={item._id} className="relative">
+    <img
+      src={item.image}
+      alt=""
+      className="rounded-xl w-full h-40 object-cover"
+    />
+
+
+              <button
+                onClick={() => deleteGallery(item._id)}
+                className="absolute top-2 right-2 text-red-600 font-bold"
+              >
+                X
+              </button>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* ================= LEADS ================= */}
+      <motion.div className="bg-white/90 p-8 rounded-2xl shadow-xl">
+        <h2 className="text-xl font-bold mb-6 text-[#003b73]">📞 Course Leads</h2>
+
+        {/* Lead Search */}
+        <input
+          type="text"
+          placeholder="🔍 Search leads by name, email, phone, or course..."
+          value={leadSearch}
+          onChange={(e) => setLeadSearch(e.target.value)}
+          className="mb-6 w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+
+        <div className="grid gap-4">
+          {filteredLeads.map((lead) => (
+            <div key={lead._id} className="bg-white p-5 rounded-xl shadow flex justify-between">
+              <div>
+                <h3 className="font-bold">{lead.name}</h3>
+                <p>{lead.email}</p>
+                <p>{lead.phone}</p>
+                <p className="text-sm text-gray-500">{lead.course}</p>
+              </div>
+
+              <button onClick={() => deleteLead(lead._id)} className="text-red-600">
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
