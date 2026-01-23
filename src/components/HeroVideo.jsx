@@ -3,18 +3,15 @@ import heroVideo from "../assets/heroVideo.mp4";
 
 export default function HeroVideo() {
   return (
-    <section className="relative h-screen w-full overflow-hidden">
+    <section className="relative h-screen w-full overflow-hidden bg-black">
 
       {/* VIDEO CONTAINER — FULL SCREEN */}
       <motion.div
         initial={{ scale: 1.08, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 1.2, ease: "easeOut" }}
-        className="
-          absolute inset-0
-          overflow-hidden
-          shadow-[0_50px_140px_rgba(0,0,0,0.65)]
-        "
+        className="absolute inset-0 overflow-hidden" 
+        
       >
         {/* VIDEO — FORCE FULL SIZE */}
         <motion.video
@@ -25,7 +22,6 @@ export default function HeroVideo() {
           playsInline
           className="w-full h-full object-cover"
         />
-
 
         {/* TECH GRID */}
         <div
@@ -42,8 +38,8 @@ export default function HeroVideo() {
       </motion.div>
 
       {/* TEXT LAYER */}
-      <div className="relative z-10 h-full flex items-center">
-        <div className="max-w-7xl mx-auto px-10 pt-28">
+      <div className="relative z-10 h-full flex items-center pointer-events-none">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 pt-28">
           <motion.h1
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
