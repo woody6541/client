@@ -14,7 +14,7 @@ const Login = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:3000/api/user/login",
+        "https://server-ikbt.onrender.com/api/user/login",
         {
           email,
           password,

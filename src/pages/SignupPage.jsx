@@ -15,7 +15,7 @@ const Signup = () => {
 
     try {
       //  Register the user
-      const res = await axios.post("http://localhost:3000/api/user/register", {
+      const res = await axios.post("https://server-ikbt.onrender.com/api/user/register", {
         name,
         email,
         password,
@@ -24,7 +24,7 @@ const Signup = () => {
       alert(res.data.message || "Account created successfully");
 
       //  Auto login immediately after signup
-      const loginRes = await axios.post("http://localhost:3000/api/user/login", {
+      const loginRes = await axios.post("https://server-ikbt.onrender.com/api/user/login", {
         email,
         password,
       });

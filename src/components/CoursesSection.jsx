@@ -53,7 +53,7 @@ export default function CoursesSection() {
             <SwiperSlide
               key={index}
               className="!w-[300px] md:!w-[400px] !h-[350px]"
-              onClick={() => navigate(`/courses/${course.path}`)} // ✅ Navigate on click
+              onClick={() => navigate(`/courses/${course.path}`)} 
             >
               <div className="relative h-full w-full rounded-3xl overflow-hidden group border border-gray-200 bg-white shadow-xl transition-all duration-500">
                 

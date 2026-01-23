@@ -9,7 +9,7 @@ export default function CourseList() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3000/api/courses", {
+      .get("https://server-ikbt.onrender.com/api/courses", {
         params: { category, type },
       })
       .then((res) => {

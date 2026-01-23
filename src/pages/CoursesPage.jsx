@@ -22,7 +22,7 @@ export default function CoursesPage() {
 
   const fetchCourses = async () => {
     setLoading(true);
-    let url = `http://localhost:3000/api/courses?category=${category}`;
+    let url = `https://server-ikbt.onrender.com/api/courses?category=${category}`;
     if (type) url += `&type=${type}`;
 
     try {
@@ -60,7 +60,7 @@ export default function CoursesPage() {
     setSubmitting(true);
 
     try {
-      await fetch("http://localhost:3000/api/leads", {
+      await fetch("https://server-ikbt.onrender.com/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(leadForm),

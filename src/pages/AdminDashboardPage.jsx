@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-const COURSE_API = "http://localhost:3000/api/courses";
-const GALLERY_API = "http://localhost:3000/api/gallery";
-const LEADS_API = "http://localhost:3000/api/leads";
+const COURSE_API = "https://server-ikbt.onrender.com/api/courses";
+const GALLERY_API = "https://server-ikbt.onrender.com/api/gallery";
+const LEADS_API = "https://server-ikbt.onrender.com/api/leads";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
