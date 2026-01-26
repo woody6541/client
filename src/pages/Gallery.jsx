@@ -69,30 +69,36 @@ useEffect(() => {
         </div>
 
         {/* GRID */}
+        {/* GRID / MASONRY LAYOUT */}
         <div className="px-6 md:px-12 pb-12">
           {filteredImages.length === 0 ? (
             <div className="text-center py-20 text-gray-400">
               No images found
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            // CHANGE 1: Used columns instead of grid for Masonry layout
+            <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6"> 
               {filteredImages.map((img, index) => (
                 <div
                   key={index}
-                  className="group relative h-auto overflow-hidden rounded-2xl shadow-md"
+                  // CHANGE 2: break-inside-avoid prevents cutting, h-auto lets image decide height
+                  className="group relative break-inside-avoid rounded-2xl overflow-hidden shadow-md bg-gray-100"
                 >
                   <img
                     src={img.url}
                     alt={img.title}
-                    className=" w-full object-contain group-hover:scale-110 transition"
+                    // CHANGE 3: w-full and h-auto to maintain original aspect ratio
+                    className="w-full h-auto object-contain transition duration-300 group-hover:scale-105"
                   />
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition flex items-end p-6">
+                  {/* OVERLAY */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-300 flex items-end p-6">
                     <div>
-                      <p className="text-pink-400 text-xs uppercase mb-1">
+                      <p className="text-pink-400 text-xs uppercase mb-1 font-bold">
                         {img.category}
                       </p>
-                      <h3 className="text-white text-lg font-bold">
+                      {/* Optional: Hide title if it blocks the view too much */}
+                      <h3 className="text-white text-lg font-bold leading-tight">
                         {img.title}
                       </h3>
                     </div>
