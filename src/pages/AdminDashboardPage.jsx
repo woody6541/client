@@ -6,6 +6,12 @@ const COURSE_API = "https://server-ikbt.onrender.com/api/courses";
 const GALLERY_API = "https://server-ikbt.onrender.com/api/gallery";
 const LEADS_API = "https://server-ikbt.onrender.com/api/leads";
 
+// Helper to check video extension
+const isVideo = (url) => {
+  if (!url) return false;
+  return url.match(/\.(mp4|webm|ogg|mov)$/i);
+};
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -94,41 +100,38 @@ export default function AdminDashboard() {
   };
 
   // ===== GALLERY HANDLERS =====
+  const handleGallerySubmit = async (e) => {
+    e.preventDefault();
+    if (!galleryForm.image) return alert("Select an image or video");
 
-const handleGallerySubmit = async (e) => {
-  e.preventDefault();
-  if (!galleryForm.image) return alert("Select an image");
+    const formData = new FormData();
+    formData.append("category", galleryForm.category);
+    formData.append("image", galleryForm.image);
 
-  const formData = new FormData();
-  formData.append("category", galleryForm.category);
-  formData.append("image", galleryForm.image);
+    try {
+      const res = await fetch(GALLERY_API, {
+        method: "POST",
+        headers: authHeader,
+        body: formData,
+      });
 
-  try {
-    const res = await fetch(GALLERY_API, { 
-      method: "POST", 
-      headers: authHeader, 
-      body: formData 
-    });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Upload failed");
+      }
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || "Upload failed");
+      setGalleryForm({ category: "", image: null });
+      setPreview(null);
+      fetchGallery();
+      alert("Uploaded successfully!");
+    } catch (err) {
+      console.error(err);
+      alert(`Error: ${err.message}`);
     }
-
-    
-    setGalleryForm({ category: "", image: null });
-    setPreview(null);
-    fetchGallery();
-    alert("Image uploaded successfully!");
-
-  } catch (err) {
-    console.error(err);
-    alert(`Error: ${err.message}`);
-  }
-};
+  };
 
   const deleteGallery = async (id) => {
-    if (!window.confirm("Delete image?")) return;
+    if (!window.confirm("Delete this item?")) return;
     await fetch(`${GALLERY_API}/${id}`, { method: "DELETE", headers: authHeader });
     fetchGallery();
   };
@@ -275,36 +278,63 @@ const handleGallerySubmit = async (e) => {
             <option value="Offers">Offers</option>
             <option value="Celebrations">Celebrations</option>
             <option value="Programmes">Programmes</option>
+            <option value="Students Achievements">Students Achievements</option>
           </select>
 
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             onChange={(e) => {
               const file = e.target.files[0];
               setGalleryForm({ ...galleryForm, image: file });
-              setPreview(URL.createObjectURL(file));
+              if (file) {
+                setPreview(URL.createObjectURL(file));
+              }
             }}
+            className={inputStyle}
           />
 
-          {preview && <img src={preview} className="h-40 rounded-xl md:col-span-2" />}
+          {/* PREVIEW AREA */}
+          {preview && (
+            <div className="md:col-span-2 mt-2">
+              <p className="text-sm text-gray-500 mb-2">Preview:</p>
+              {galleryForm.image?.type?.startsWith("video") ? (
+                <video src={preview} controls className="h-48 rounded-xl bg-black" />
+              ) : (
+                <img src={preview} className="h-48 rounded-xl object-contain bg-gray-100" alt="Preview" />
+              )}
+            </div>
+          )}
 
-          <button className="bg-green-600 text-white py-3 rounded-xl md:col-span-2">Upload Image</button>
+          <button className="bg-green-600 text-white py-3 rounded-xl md:col-span-2">
+            Upload Item
+          </button>
         </form>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
           {gallery.map((item) => (
-  <div key={item._id} className="relative">
-    <img
-      src={item.image}
-      alt=""
-      className="rounded-xl w-full h-40 object-cover"
-    />
-
+            <div key={item._id} className="relative group">
+              {isVideo(item.image) ? (
+                 <video
+                 src={item.image}
+                 className="rounded-xl w-full h-40 object-cover bg-black"
+                 controls
+               />
+              ) : (
+                <img
+                  src={item.image}
+                  alt=""
+                  className="rounded-xl w-full h-40 object-cover bg-gray-100"
+                />
+              )}
+              
+              <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                {item.category}
+              </div>
 
               <button
                 onClick={() => deleteGallery(item._id)}
-                className="absolute top-2 right-2 text-red-600 font-bold"
+                className="absolute top-2 right-2 bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-lg font-bold"
               >
                 X
               </button>
@@ -317,7 +347,6 @@ const handleGallerySubmit = async (e) => {
       <motion.div className="bg-white/90 p-8 rounded-2xl shadow-xl">
         <h2 className="text-xl font-bold mb-6 text-[#003b73]">📞 Course Leads</h2>
 
-        {/* Lead Search */}
         <input
           type="text"
           placeholder="🔍 Search leads by name, email, phone, or course..."
@@ -328,15 +357,15 @@ const handleGallerySubmit = async (e) => {
 
         <div className="grid gap-4">
           {filteredLeads.map((lead) => (
-            <div key={lead._id} className="bg-white p-5 rounded-xl shadow flex justify-between">
+            <div key={lead._id} className="bg-white p-5 rounded-xl shadow flex justify-between items-center">
               <div>
-                <h3 className="font-bold">{lead.name}</h3>
-                <p>{lead.email}</p>
-                <p>{lead.phone}</p>
-                <p className="text-sm text-gray-500">{lead.course}</p>
+                <h3 className="font-bold text-lg">{lead.name}</h3>
+                <p className="text-gray-600">{lead.email}</p>
+                <p className="text-gray-600">{lead.phone}</p>
+                <p className="text-sm text-blue-600 font-medium mt-1">{lead.course}</p>
               </div>
 
-              <button onClick={() => deleteLead(lead._id)} className="text-red-600">
+              <button onClick={() => deleteLead(lead._id)} className="bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200 transition">
                 Delete
               </button>
             </div>
