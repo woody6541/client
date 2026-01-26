@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   const [gallery, setGallery] = useState([]);
   const [galleryForm, setGalleryForm] = useState({ category: "", image: null });
   const [preview, setPreview] = useState(null);
+  const [uploading, setUploading] = useState(false); // NEW: Loading state
 
   // ===== LEADS =====
   const [leads, setLeads] = useState([]);
@@ -50,25 +51,39 @@ export default function AdminDashboard() {
 
   // ===== FETCH FUNCTIONS =====
   const fetchCourses = async () => {
-    const res = await fetch(COURSE_API, { headers: authHeader });
-    setCourses(await res.json());
+    try {
+      const res = await fetch(COURSE_API, { headers: authHeader });
+      setCourses(await res.json());
+    } catch (err) {
+      console.error("Error fetching courses:", err);
+    }
   };
 
   const fetchGallery = async () => {
-    const res = await fetch(GALLERY_API, { headers: authHeader });
-    setGallery(await res.json());
+    try {
+      const res = await fetch(GALLERY_API, { headers: authHeader });
+      setGallery(await res.json());
+    } catch (err) {
+      console.error("Error fetching gallery:", err);
+    }
   };
 
   const fetchLeads = async () => {
-    const res = await fetch(LEADS_API, { headers: authHeader });
-    setLeads(await res.json());
+    try {
+      const res = await fetch(LEADS_API, { headers: authHeader });
+      setLeads(await res.json());
+    } catch (err) {
+      console.error("Error fetching leads:", err);
+    }
   };
 
   useEffect(() => {
-    fetchCourses();
-    fetchGallery();
-    fetchLeads();
-  }, []);
+    if (token) {
+      fetchCourses();
+      fetchGallery();
+      fetchLeads();
+    }
+  }, [token]);
 
   // ===== COURSE HANDLERS =====
   const handleCourseSubmit = async (e) => {
@@ -104,6 +119,8 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!galleryForm.image) return alert("Select an image or video");
 
+    setUploading(true); // START LOADING
+
     const formData = new FormData();
     formData.append("category", galleryForm.category);
     formData.append("image", galleryForm.image);
@@ -120,6 +137,7 @@ export default function AdminDashboard() {
         throw new Error(errorData.error || "Upload failed");
       }
 
+      // Success
       setGalleryForm({ category: "", image: null });
       setPreview(null);
       fetchGallery();
@@ -127,6 +145,8 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error(err);
       alert(`Error: ${err.message}`);
+    } finally {
+      setUploading(false); // STOP LOADING
     }
   };
 
@@ -235,7 +255,7 @@ export default function AdminDashboard() {
             className={`${inputStyle} md:col-span-2`}
           />
 
-          <button className="bg-blue-700 text-white py-3 rounded-xl md:col-span-2">
+          <button className="bg-blue-700 text-white py-3 rounded-xl md:col-span-2 hover:bg-blue-800 transition">
             {editingCourseId ? "Update Course" : "Save Course"}
           </button>
         </form>
@@ -250,10 +270,10 @@ export default function AdminDashboard() {
               <p className="text-sm mt-1">{course.duration}</p>
 
               <div className="flex gap-3 mt-4">
-                <button onClick={() => handleEditCourse(course)} className="px-4 py-2 bg-yellow-500 text-white rounded">
+                <button onClick={() => handleEditCourse(course)} className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition">
                   Edit
                 </button>
-                <button onClick={() => handleDeleteCourse(course._id)} className="px-4 py-2 bg-red-600 text-white rounded">
+                <button onClick={() => handleDeleteCourse(course._id)} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
                   Delete
                 </button>
               </div>
@@ -306,8 +326,23 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <button className="bg-green-600 text-white py-3 rounded-xl md:col-span-2">
-            Upload Item
+          {/* UPLOAD BUTTON WITH LOADING STATE */}
+          <button
+            disabled={uploading}
+            className={`md:col-span-2 py-3 rounded-xl font-bold text-white transition-all flex justify-center items-center gap-2
+              ${uploading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
+          >
+            {uploading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Uploading... Please Wait
+              </>
+            ) : (
+              "Upload Item"
+            )}
           </button>
         </form>
 
@@ -315,15 +350,15 @@ export default function AdminDashboard() {
           {gallery.map((item) => (
             <div key={item._id} className="relative group">
               {isVideo(item.image) ? (
-                 <video
-                 src={item.image}
-                 className="rounded-xl w-full h-40 object-cover bg-black"
-                 controls
-               />
+                <video
+                  src={item.image}
+                  className="rounded-xl w-full h-40 object-cover bg-black"
+                  controls
+                />
               ) : (
                 <img
                   src={item.image}
-                  alt=""
+                  alt={item.category}
                   className="rounded-xl w-full h-40 object-cover bg-gray-100"
                 />
               )}
