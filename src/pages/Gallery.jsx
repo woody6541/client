@@ -79,12 +79,12 @@ useEffect(() => {
               {filteredImages.map((img, index) => (
                 <div
                   key={index}
-                  className="group relative h-72 overflow-hidden rounded-2xl shadow-md"
+                  className="group relative h-auto overflow-hidden rounded-2xl shadow-md"
                 >
                   <img
                     src={img.url}
                     alt={img.title}
-                    className="h-full w-full object-cover group-hover:scale-110 transition"
+                    className=" w-full object-contain group-hover:scale-110 transition"
                   />
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition flex items-end p-6">
